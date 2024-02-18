@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grumpy Cooks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <!-- should not appear in login and register -->
+        {% block header_content %}
+            <nav>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="favourites.html">Favourites</a></li>
+                    <li><a href="myRecipes.html">My Recipes</a></li>
+                </ul>
+            </nav>
+        {% endblock %} 
+    </header>
+
+    <main>
+        {% block main_content %}
+        {% endblock %}
+    </main>
+
+    <footer>
+        {% block footer_content %}
+            <section class="email">
+                <p>Support: <a href="mailto:">help_GrumpyCooks@gmail.com</a></p>
+            </section>
+        {% endblock %}
+    </footer>
+</body>
+</html>
