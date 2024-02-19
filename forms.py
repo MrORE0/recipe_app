@@ -19,14 +19,12 @@ class LoginForm(FlaskForm):
     username = StringField('Username:', validators=[InputRequired()])
     password = PasswordField('Password:', validators=[InputRequired()])
     submit = SubmitField('Login')
-#try to add a cookie for remembering option (linking it to a profile)
+    #try to add a cookie for remembering option (linking it to a profile)
     
 class UploadForm(FlaskForm):
-    recipe_name = StringField('Title:', validators=[InputRequired()])
+    title = StringField('Title:', validators=[InputRequired()])
     ingredients = StringField('Ingredients:', validators=[InputRequired()]) #can I make it like a list??????
-    steps = StringField('Steps:', validators=[InputRequired()]) #can I make it like a list??????
-
-    UPLOAD_FOLDER = '/static/'
-    ALLOWED_EXTENSIONS = ['png', 'jpg', 'jpeg']
-    image = FileField('Upload Image') # potentially more images 
+    steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5}) #can I make it like a list??????
+    # image = FileField('Upload Image') # potentially more images 
     submit = SubmitField('Publish')
+    

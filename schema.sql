@@ -24,4 +24,16 @@ CREATE TABLE users
     password TEXT NOT NULL
 );
 
-SELECT * FROM users;
+DROP TABLE IF EXISTS recipes;
+CREATE TABLE recipes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    ingredients TEXT NOT NULL,
+    steps TEXT NOT NULL,
+    image_path TEXT,
+    FOREIGN KEY (username) REFERENCES users(id)
+);
+
+
+SELECT * FROM recipes;

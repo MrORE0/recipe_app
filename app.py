@@ -1,11 +1,18 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template, redirect, make_response, request
 from database import get_db, close_db 
-from forms import RegistrationForm, LoginForm
+from forms import RegistrationForm, LoginForm, UploadForm
+import os
 #hashing the password including salting
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app. config ["SECRET_KEY"] = "this-is-my-secret-key"
+app.config['UPLOAD_FOLDER'] = 'static/'
+def allowed_file(filename):
+    app.config['UPLOAD_FOLDER'] = 'static/'
+    app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 app.teardown_appcontext(close_db)
 
@@ -47,11 +54,42 @@ def login():
         else:
             hashed_password = registered_user['password']
             if check_password_hash(hashed_password, password):
-                return redirect('/home')
+                response = make_response(redirect('/home'))
+                response.set_cookie('username', username)
+                return response
             else:
                 #add cookies here   
                 return render_template('login.html', message = 'Invalid Username or Password. Please check your username and try again.', form = form)
     return render_template('login.html', form = form)
+
+@app.route('/upload', methods = ['GET', 'POST'])
+def upload():
+    form = UploadForm()  # Creating an instance of the UploadForm class
+    if form.validate_on_submit():
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(image_path)  # Saving the file with the correct filename
+            title = form.title.data
+            ingredients = form.ingredients.data
+            steps = form.steps.data
+            username = request.cookies.get('username')
+            db = get_db() 
+            db.execute(
+                """INSERT INTO recipes (username, title, ingredients, steps, image_path)
+                VALUES (?, ?, ?, ?, ?);""",
+                (username, title, ingredients, steps, image_path)
+            )
+            db.commit()
+            return render_template('recipe_upload.html', form=form)
+        else:
+            return 'Invalid file format'
+    return render_template('recipe_upload.html', form=form)
+
+
+
+
 
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
