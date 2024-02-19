@@ -79,13 +79,53 @@ def upload():
             db.execute(
                 """INSERT INTO recipes (username, title, ingredients, steps, image_path)
                 VALUES (?, ?, ?, ?, ?);""",
-                (username, title, ingredients, steps, image_path)
+                (username, title, ingredients, steps, image_path.strip('/static'))
             )
             db.commit()
             return render_template('recipe_upload.html', form=form)
         else:
             return 'Invalid file format'
     return render_template('recipe_upload.html', form=form)
+
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+def edit(id):
+    db = get_db()
+    recipe = db.execute(
+        "SELECT * FROM recipes WHERE id = ?",
+        (id,)
+    ).fetchone()
+
+    if not recipe:
+        return "Recipe not found", 404
+
+    form = UploadForm()  # Creating an instance of the UploadForm class
+    if form.validate_on_submit():
+        title = form.title.data
+        ingredients = form.ingredients.data
+        steps = form.steps.data
+        username = request.cookies.get('username')
+
+        file = request.files['file']
+        if file and allowed_file(file.filename):
+            # If a new image is uploaded, delete the old image file
+            if recipe['image_path']:
+                os.remove(recipe['image_path'])
+
+            filename = secure_filename(file.filename)
+            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(image_path)  # Saving the new file with the correct filename
+
+            db.execute(
+                """UPDATE recipes
+                SET title = ?, ingredients = ?, steps = ?, image_path = ?
+                WHERE id = ?""",
+                (title, ingredients, steps, image_path, id)
+            )
+            db.commit()
+
+            return 'done' #redirect('recipe_detail', id=id)
+        else:
+            return 'Invalid file format'
 
 
 
@@ -94,4 +134,8 @@ def upload():
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
 def home():
-    return
+
+    db = get_db()
+    recipes = db.execute(
+        """SELECT * FROM recipes;""").fetchall()
+    return render_template('index.html', recipes = recipes)
