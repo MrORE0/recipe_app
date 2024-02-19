@@ -3,10 +3,12 @@
 {% block main_content %}
    <section class="all_recipes">
         {% for recipe in recipes %}
-                <section>
-                    <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="">
-                    <h2>{{recipe['title']}}</h2>
-                </section>
+                <a href="{{ url_for('open_recipe', id = recipe['id']) }}">
+                    <section>
+                        <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="">
+                        <h2>{{recipe['title']}}</h2>
+                    </section>
+                </a>
         {% endfor %}
    </section>
 {% endblock %}

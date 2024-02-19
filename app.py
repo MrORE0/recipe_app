@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, make_response, request
+from flask import Flask, render_template, redirect, make_response, request, url_for
 from database import get_db, close_db 
 from forms import RegistrationForm, LoginForm, UploadForm
 import os
@@ -7,15 +7,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app. config ["SECRET_KEY"] = "this-is-my-secret-key"
+app.config ["SECRET_KEY"] = "this-is-my-secret-key"
 app.config['UPLOAD_FOLDER'] = 'static/'
+app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+
 def allowed_file(filename):
     app.config['UPLOAD_FOLDER'] = 'static/'
-    app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 app.teardown_appcontext(close_db)
-
 
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
@@ -87,45 +87,68 @@ def upload():
             return 'Invalid file format'
     return render_template('recipe_upload.html', form=form)
 
-@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@app.route('/edit/<id>', methods=['GET', 'POST'])
 def edit(id):
     db = get_db()
-    recipe = db.execute(
-        "SELECT * FROM recipes WHERE id = ?",
-        (id,)
-    ).fetchone()
-
+    recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
     if not recipe:
         return "Recipe not found", 404
 
-    form = UploadForm()  # Creating an instance of the UploadForm class
+    form = UploadForm(obj=recipe)  # Pass recipe object to populate form fields
+
     if form.validate_on_submit():
+        file = request.files['file']
+        if file:
+            if allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+                # Remove old image if it exists
+                if recipe['image_path']:
+                    os.remove(url_for('static', filename=recipe['image_path']))
+
+                image_path_db = image_path.strip('/static')
+            else:
+                return 'Invalid file format'
+        else:
+            image_path_db = recipe['image_path']
+
         title = form.title.data
         ingredients = form.ingredients.data
         steps = form.steps.data
         username = request.cookies.get('username')
 
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            # If a new image is uploaded, delete the old image file
-            if recipe['image_path']:
-                os.remove(recipe['image_path'])
-
-            filename = secure_filename(file.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(image_path)  # Saving the new file with the correct filename
-
+        try:
             db.execute(
                 """UPDATE recipes
-                SET title = ?, ingredients = ?, steps = ?, image_path = ?
+                SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?
                 WHERE id = ?""",
-                (title, ingredients, steps, image_path, id)
+                (username, title, ingredients, steps, image_path_db, id)
             )
             db.commit()
+        except Exception as e:
+            # If an exception occurs during commit, rollback the deletion of the new image
+            if file:
+                os.remove(image_path)
+            return render_template('recipe_upload.html', form=form)
 
-            return 'done' #redirect('recipe_detail', id=id)
+        # Fetch the updated recipe from the database
+        updated_recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
+        if not updated_recipe:
+            return render_template('recipe_upload.html', form=form)
         else:
-            return 'Invalid file format'
+            return redirect('/open_recipe', id=id)
+
+    # Populate form fields with existing recipe data
+    form.title.data = recipe['title']
+    form.ingredients.data = recipe['ingredients']
+    form.steps.data = recipe['steps']
+    username = request.cookies.get('username')
+    return render_template('recipe_upload.html', form=form)
+
+
+
+
 
 
 
@@ -134,8 +157,24 @@ def edit(id):
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
 def home():
-
     db = get_db()
     recipes = db.execute(
         """SELECT * FROM recipes;""").fetchall()
     return render_template('index.html', recipes = recipes)
+
+@app.route('/open_recipe/<id>', methods = ['GET', 'POST'])
+def open_recipe(id):
+    form = UploadForm()
+    username = request.cookies.get('username')
+    db = get_db()
+    publisher = db.execute("""
+        SELECT recipes.*, users.username AS publisher
+        FROM recipes
+        JOIN users ON recipes.username = users.username
+        WHERE recipes.username = ?;""", (username,)).fetchone()
+    if publisher is None:
+        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
+        return render_template('open_recipe.html', recipe = recipe, publisher=False, form=form)
+    else:
+        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
+        return render_template('open_recipe.html', recipe = recipe, publisher=True, form=form)

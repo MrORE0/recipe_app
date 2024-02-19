@@ -27,5 +27,6 @@ class UploadForm(FlaskForm):
     steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5}) #can I make it like a list??????
     # image = FileField('Upload Image') # potentially more images 
     submit = SubmitField('Publish')
+    edit = SubmitField('Edit')
 
     
