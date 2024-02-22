@@ -12,9 +12,11 @@
         {% block header_content %}
             <nav>
                 <ul>
-                    <li><a href="index.html">Home</a></li>
-                    <li><a href="favourites.html">Favourites</a></li>
-                    <li><a href="myRecipes.html">My Recipes</a></li>
+                    <li><a href="{{ url_for('home') }}">Home</a></li>
+                    {% if notGuest %}
+                        <li><a href="favourites.html">Favourites</a></li>
+                        <li><a href="myRecipes.html">My Recipes</a></li>
+                    {% endif %}
                 </ul>
             </nav>
         {% endblock %} 

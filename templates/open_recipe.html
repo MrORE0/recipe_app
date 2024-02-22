@@ -2,18 +2,18 @@
 
 {% block main_content %}
 
-    {% if publisher %}
-    <a href="{{ url_for('edit', id = recipe['id']) }}">{{form.edit()}}</a>
+    {% if publisher == True %}
+     <a href="{{ url_for('edit', id = recipe['id']) }}">{{form.edit()}}</a>
     {% endif %}
 
    <section class="open_recipe">
         <h2>{{recipe['title']}}</h2>
+        <p>type: {{recipe['type']}}</p>
+        <p>Allergies: {{recipe['allergies']}}</p>
         <p>Published by: {{recipe['username']}}</p>
         <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="recipe['title']">
         <p>Ingredients: {{recipe['ingredients']}}</p>
         <p>Steps: {{recipe['steps']}}</p>
    </section>
-   <article class="comments">
-        <p>some comments</p>
-   </article>
+   
 {% endblock %}

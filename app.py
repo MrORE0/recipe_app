@@ -36,7 +36,7 @@ def register():
                 VALUES (?, ?);""", (username, generate_password_hash(password)))
             db.commit()
             return redirect('/login')
-    return render_template('register.html', form = form)
+    return render_template('register.html', form = form, notGuest = False)
 
 @app.route('/login', methods = ['GET', 'POST'])
 def login():
@@ -60,7 +60,7 @@ def login():
             else:
                 #add cookies here   
                 return render_template('login.html', message = 'Invalid Username or Password. Please check your username and try again.', form = form)
-    return render_template('login.html', form = form)
+    return render_template('login.html', form = form, notGuest = False)
 
 @app.route('/upload', methods = ['GET', 'POST'])
 def upload():
@@ -73,16 +73,18 @@ def upload():
             file.save(image_path)  # Saving the file with the correct filename
             title = form.title.data
             ingredients = form.ingredients.data
+            type = form.type.data
+            allergies = form.allergies.data
             steps = form.steps.data
             username = request.cookies.get('username')
             db = get_db() 
             db.execute(
-                """INSERT INTO recipes (username, title, ingredients, steps, image_path)
-                VALUES (?, ?, ?, ?, ?);""",
-                (username, title, ingredients, steps, image_path.strip('/static'))
+                """INSERT INTO recipes (username, title, ingredients, steps, image_path, allergies, type)
+                VALUES (?, ?, ?, ?, ?, ?, ?);""",
+                (username, title, ingredients, steps, image_path.strip('/static'), allergies, type)
             )
             db.commit()
-            return render_template('recipe_upload.html', form=form)
+            return redirect('/home')
         else:
             return 'Invalid file format'
     return render_template('recipe_upload.html', form=form)
@@ -116,43 +118,38 @@ def edit(id):
         title = form.title.data
         ingredients = form.ingredients.data
         steps = form.steps.data
+        allergies = form.allergies.data
+        type = form.type.data
         username = request.cookies.get('username')
 
-        try:
-            db.execute(
-                """UPDATE recipes
-                SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?
+        db.execute(
+            """UPDATE recipes
+                SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
                 WHERE id = ?""",
-                (username, title, ingredients, steps, image_path_db, id)
-            )
-            db.commit()
-        except Exception as e:
-            # If an exception occurs during commit, rollback the deletion of the new image
-            if file:
-                os.remove(image_path)
-            return render_template('recipe_upload.html', form=form)
+            (username, title, ingredients, steps, image_path_db, allergies, type, id)
+        )
+        db.commit()
+    
+        # If an exception occurs during commit, rollback the deletion of the new image
+        if file:
+            os.remove(image_path) #no need to delete the old picture (your need permissions)
+        return render_template('recipe_upload.html', form=form)
 
         # Fetch the updated recipe from the database
         updated_recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
         if not updated_recipe:
             return render_template('recipe_upload.html', form=form)
         else:
-            return redirect('/open_recipe', id=id)
+            return redirect('/open_recipe/', id=id)
 
     # Populate form fields with existing recipe data
     form.title.data = recipe['title']
     form.ingredients.data = recipe['ingredients']
     form.steps.data = recipe['steps']
+    form.allergies.data = recipe['allergies']
+    form.type.data = recipe['type']
     username = request.cookies.get('username')
     return render_template('recipe_upload.html', form=form)
-
-
-
-
-
-
-
-
 
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
@@ -168,13 +165,13 @@ def open_recipe(id):
     username = request.cookies.get('username')
     db = get_db()
     publisher = db.execute("""
-        SELECT recipes.*, users.username AS publisher
+        SELECT users.username AS username
         FROM recipes
         JOIN users ON recipes.username = users.username
-        WHERE recipes.username = ?;""", (username,)).fetchone()
-    if publisher is None:
-        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
-        return render_template('open_recipe.html', recipe = recipe, publisher=False, form=form)
-    else:
+        WHERE recipes.id = ?;""", (id,)).fetchone()
+    if publisher['username'] == username:
         recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
         return render_template('open_recipe.html', recipe = recipe, publisher=True, form=form)
+    else:
+        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
+        return render_template('open_recipe.html', recipe = recipe, publisher=False, form=form)

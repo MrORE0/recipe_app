@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, FileField
-from wtforms.validators import InputRequired, EqualTo, Regexp
+from wtforms import StringField, SubmitField, PasswordField, DecimalField, SelectField, BooleanField
+from wtforms.validators import InputRequired, EqualTo, Regexp, NumberRange
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username:', validators=[InputRequired(),Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0,
@@ -25,8 +25,14 @@ class UploadForm(FlaskForm):
     title = StringField('Title:', validators=[InputRequired()])
     ingredients = StringField('Ingredients:', validators=[InputRequired()]) #can I make it like a list??????
     steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5}) #can I make it like a list??????
-    # image = FileField('Upload Image') # potentially more images 
+    type = SelectField('Type(breakfast, lunch, dinner, snack):', choices=['Breakfast', 'Lunch', 'Dinner', 'Snack'], default='Breakfast')
+    allergies = StringField('Allergies:')
     submit = SubmitField('Publish')
     edit = SubmitField('Edit')
+    delete = SubmitField('Delete')
 
-    
+class ReviewForm(FlaskForm):
+    feedback = StringField('Feedback:', validators=[InputRequired()])
+    score = DecimalField('Score', validators=[InputRequired(), NumberRange(1,5)])
+    submit = SubmitField('Comment')
+
