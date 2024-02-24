@@ -13,9 +13,13 @@
             <nav>
                 <ul>
                     <li><a href="{{ url_for('home') }}">Home</a></li>
+                    <li><a href="{{ url_for('upload') }}">Upload recipe</a></li>
                     {% if notGuest %}
                         <li><a href="favourites.html">Favourites</a></li>
                         <li><a href="myRecipes.html">My Recipes</a></li>
+                        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                    {% else %}
+                        <li><a href="{{ url_for('login') }}">Login</a></li>
                     {% endif %}
                 </ul>
             </nav>

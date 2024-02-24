@@ -161,7 +161,10 @@ def home():
     db = get_db()
     recipes = db.execute(
         """SELECT * FROM recipes;""").fetchall()
-    return render_template('index.html', recipes = recipes)
+    if g.user:
+        return render_template('index.html', recipes = recipes, notGuest = True)
+    else:
+        return render_template('index.html', recipes = recipes, notGuest = False)
 
 @app.route('/open_recipe/<id>', methods = ['GET', 'POST'])
 def open_recipe(id):
