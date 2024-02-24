@@ -11,11 +11,12 @@ app = Flask(__name__)
 app.config ["SECRET_KEY"] = "this-is-my-secret-key"
 app.config['UPLOAD_FOLDER'] = 'static/'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+app.teardown_appcontext(close_db)
 
 # login required functions
 @app.before_request
 def load_logged_in_user():
-#this will run before each request and will get the username an a g(global) variable(user)
+#this will run before each request and will get the username in a g(global).variable(user)
     g.user = session.get('username', None) 
 
 #here we define a route (@login_required)
@@ -31,7 +32,7 @@ def allowed_file(filename):
     app.config['UPLOAD_FOLDER'] = 'static/'
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-app.teardown_appcontext(close_db)
+
 
 @app.route('/register', methods = ['GET', 'POST'])
 def register():
@@ -65,12 +66,17 @@ def login():
         """SELECT * FROM users
         WHERE username = ?;""", (username,)).fetchone()
         if registered_user is None:
-    # User not found
+            # User not found
             return render_template('login.html', message = 'Invalid Username or Password. Please check your username and try again.', form = form)
         else:
             hashed_password = registered_user['password']
             if check_password_hash(hashed_password, password):
-                response = make_response(redirect('/home'))
+                session.clear()
+                session['username'] = username
+                next_page = request.args.get('next')
+                if not next_page:
+                    next_page = url_for('home')
+                response = make_response(redirect(next_page))
                 response.set_cookie('username', username)
                 return response
             else:
@@ -78,101 +84,76 @@ def login():
                 return render_template('login.html', message = 'Invalid Username or Password. Please check your username and try again.', form = form)
     return render_template('login.html', form = form, notGuest = False)
 
-@app.logout('/logout', methods = ['GET', 'POST'])
+@app.route('/logout', methods = ['GET', 'POST'])
 def logout():
     session.clear()
     return redirect(url_for('home'))
 
-@app.route('/upload', methods = ['GET', 'POST'])
-@login_required
-def upload():
-    form = UploadForm()  # Creating an instance of the UploadForm class
-    if form.validate_on_submit():
-        file = request.files['file']
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(image_path)  # Saving the file with the correct filename
-            title = form.title.data
-            ingredients = form.ingredients.data
-            type = form.type.data
-            allergies = form.allergies.data
-            steps = form.steps.data
-            username = request.cookies.get('username')
-            db = get_db() 
-            db.execute(
-                """INSERT INTO recipes (username, title, ingredients, steps, image_path, allergies, type)
-                VALUES (?, ?, ?, ?, ?, ?, ?);""",
-                (username, title, ingredients, steps, image_path.strip('/static'), allergies, type)
-            )
-            db.commit()
-            return redirect('/home')
-        else:
-            return 'Invalid file format'
-    return render_template('recipe_upload.html', form=form)
 
-@app.route('/edit/<id>', methods=['GET', 'POST'])
-@login_required
-def edit(id):
-    db = get_db()
-    recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
-    if not recipe:
-        return "Recipe not found", 404
-
-    form = UploadForm(obj=recipe)  # Pass recipe object to populate form fields
-
+#function for checking when uploading/editing recipe
+def process_recipe_form(recipe):
+    form = UploadForm()
     if form.validate_on_submit():
         file = request.files['file']
         if file:
             if allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-
-                # Remove old image if it exists
-                if recipe['image_path']:
-                    os.remove(url_for('static', filename=recipe['image_path']))
-
+                file.save(image_path)
                 image_path_db = image_path.strip('/static')
             else:
                 return 'Invalid file format'
         else:
-            image_path_db = recipe['image_path']
+            if recipe is not None:
+                image_path_db = recipe['image_path']
+            else:
+                image_path_db = None
 
-        title = form.title.data
-        ingredients = form.ingredients.data
-        steps = form.steps.data
-        allergies = form.allergies.data
-        type = form.type.data
-        username = request.cookies.get('username')
-
-        db.execute(
-            """UPDATE recipes
+        db = get_db()
+        if recipe is None:
+            db.execute(
+                """INSERT INTO recipes (username, title, ingredients, steps, image_path, allergies, type)
+                VALUES (?, ?, ?, ?, ?, ?, ?);""",
+                (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data)
+            )
+        else:
+            db.execute(
+                """UPDATE recipes
                 SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
                 WHERE id = ?""",
-            (username, title, ingredients, steps, image_path_db, allergies, type, id)
-        )
+                (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
+            )
         db.commit()
+        return True
+    return False
+
+@app.route('/upload', methods=['GET', 'POST'])
+@login_required
+def upload():
+    form = UploadForm()
+    if process_recipe_form(None):
+        return redirect('/home')
+    return render_template('recipe_upload.html', form=form)
+
+
+@app.route('/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+def edit(id):
+    db = get_db()
+    recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
+    if not recipe:
+        return "Recipe not found", 404
     
-        # If an exception occurs during commit, rollback the deletion of the new image
-        if file:
-            os.remove(image_path) #no need to delete the old picture (your need permissions)
-        return render_template('recipe_upload.html', form=form)
-
-        # Fetch the updated recipe from the database
-        updated_recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
-        if not updated_recipe:
-            return render_template('recipe_upload.html', form=form)
-        else:
-            return redirect('/open_recipe/', id=id)
-
-    # Populate form fields with existing recipe data
+    form = UploadForm()
     form.title.data = recipe['title']
     form.ingredients.data = recipe['ingredients']
     form.steps.data = recipe['steps']
     form.allergies.data = recipe['allergies']
     form.type.data = recipe['type']
-    username = request.cookies.get('username')
-    return render_template('recipe_upload.html', form=form)
+
+    if process_recipe_form(recipe):
+        return redirect(url_for('open_recipe', id=id))
+    return render_template('recipe_upload.html', form=form) #why did I put this here
 
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])

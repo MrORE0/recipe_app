@@ -30,6 +30,7 @@ class UploadForm(FlaskForm):
     submit = SubmitField('Publish')
     edit = SubmitField('Edit')
     delete = SubmitField('Delete')
+    
 
 class ReviewForm(FlaskForm):
     feedback = StringField('Feedback:', validators=[InputRequired()])
