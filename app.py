@@ -1,6 +1,7 @@
-from flask import Flask, render_template, redirect, make_response, request, url_for
+from flask import Flask, render_template, redirect, make_response, request, url_for, g, session
 from database import get_db, close_db 
 from forms import RegistrationForm, LoginForm, UploadForm
+from functools import wraps
 import os
 #hashing the password including salting
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -10,6 +11,21 @@ app = Flask(__name__)
 app.config ["SECRET_KEY"] = "this-is-my-secret-key"
 app.config['UPLOAD_FOLDER'] = 'static/'
 app.config['ALLOWED_EXTENSIONS'] = {'png', 'jpg', 'jpeg'}
+
+# login required functions
+@app.before_request
+def load_logged_in_user():
+#this will run before each request and will get the username an a g(global) variable(user)
+    g.user = session.get('username', None) 
+
+#here we define a route (@login_required)
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if g.user is None:
+            return redirect(url_for('login', next=request.url))
+        return view(*args, **kwargs)
+    return wrapped_view
 
 def allowed_file(filename):
     app.config['UPLOAD_FOLDER'] = 'static/'
@@ -62,7 +78,13 @@ def login():
                 return render_template('login.html', message = 'Invalid Username or Password. Please check your username and try again.', form = form)
     return render_template('login.html', form = form, notGuest = False)
 
+@app.logout('/logout', methods = ['GET', 'POST'])
+def logout():
+    session.clear()
+    return redirect(url_for('home'))
+
 @app.route('/upload', methods = ['GET', 'POST'])
+@login_required
 def upload():
     form = UploadForm()  # Creating an instance of the UploadForm class
     if form.validate_on_submit():
@@ -90,6 +112,7 @@ def upload():
     return render_template('recipe_upload.html', form=form)
 
 @app.route('/edit/<id>', methods=['GET', 'POST'])
+@login_required
 def edit(id):
     db = get_db()
     recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
@@ -162,14 +185,13 @@ def home():
 @app.route('/open_recipe/<id>', methods = ['GET', 'POST'])
 def open_recipe(id):
     form = UploadForm()
-    username = request.cookies.get('username')
     db = get_db()
     publisher = db.execute("""
         SELECT users.username AS username
         FROM recipes
         JOIN users ON recipes.username = users.username
         WHERE recipes.id = ?;""", (id,)).fetchone()
-    if publisher['username'] == username:
+    if publisher['username'] == g.user:
         recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
         return render_template('open_recipe.html', recipe = recipe, publisher=True, form=form)
     else:
