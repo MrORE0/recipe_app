@@ -30,8 +30,6 @@ class UploadForm(FlaskForm):
     submit = SubmitField('Publish')
     edit = SubmitField('Edit')
     delete = SubmitField('Delete')
-    
-
 class ReviewForm(FlaskForm):
     feedback = StringField('Feedback:', validators=[InputRequired()])
     score = DecimalField('Score', validators=[InputRequired(), NumberRange(1,5)])
@@ -41,3 +39,4 @@ class Filters(FlaskForm):
     type_filters = [('Breakfast', 'breakfast'), ('Lunch', 'Lunch'), ('Dinner', 'dinner'), ('Snack', 'snack')]
     #this is usually a dropdown menu, but with the option_widget we render it as checkboxes that can be selected
     type_checkboxes = SelectMultipleField('Type:', choices=type_filters, option_widget=widgets.CheckboxInput())
+    submit = SubmitField('Filter')

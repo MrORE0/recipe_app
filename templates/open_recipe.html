@@ -4,10 +4,12 @@
 
     {% if publisher == True %}
      <a href="{{ url_for('edit', id = recipe['id']) }}">{{form.edit()}}</a>
+     <a href="{{ url_for('delete', id = recipe['id']) }}">{{form.delete()}}</a>
     {% endif %}
 
    <section class="open_recipe">
         <h2>{{recipe['title']}}</h2>
+        <a href="{{ url_for('favourite', id = recipe['id']) }}"><img src="{{ url_for('static', filename = filename) }}" alt="an image of a star"></a>
         <p>type: {{recipe['type']}}</p>
         <p>Allergies: {{recipe['allergies']}}</p>
         <p>Published by: {{recipe['username']}}</p>

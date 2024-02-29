@@ -31,6 +31,13 @@ CREATE TABLE reviews(
     FOREIGN KEY (id) REFERENCES recipes(recipe_id)
 );
 
+DROP TABLE IF EXISTS favourites;
+CREATE TABLE favourites (
+    username TEXT NOT NULL,
+    recipe_id INTEGER NOT NULL,
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (username) REFERENCES users(username)
+);
 
 SELECT * FROM recipes;
 

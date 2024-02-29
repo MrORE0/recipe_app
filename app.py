@@ -1,6 +1,6 @@
-from flask import Flask, render_template, redirect, make_response, request, url_for, g, session
+from flask import Flask, render_template, redirect, make_response, request, url_for, g, session, flash
 from database import get_db, close_db 
-from forms import RegistrationForm, LoginForm, UploadForm
+from forms import RegistrationForm, LoginForm, UploadForm, Filters
 from functools import wraps
 import os
 #hashing the password including salting
@@ -59,7 +59,7 @@ def register():
 def login():
     form = LoginForm() 
     if form.validate_on_submit():
-        username = form.username.data
+        username = form.username.data.strip(' ')
         password = form.password.data
         db = get_db()
         registered_user = db.execute(
@@ -120,7 +120,7 @@ def process_recipe_form(recipe):
             db.execute(
                 """UPDATE recipes
                 SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
-                WHERE id = ?""",
+                WHERE id = ?;""",
                 (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
             )
         db.commit()
@@ -153,31 +153,111 @@ def edit(id):
 
     if process_recipe_form(recipe):
         return redirect(url_for('open_recipe', id=id))
-    return render_template('recipe_upload.html', form=form) #why did I put this here
+    return render_template('recipe_upload.html', form=form)
 
+@app.route('/delete/<int:id>', methods=['GET', 'POST'])
+@login_required
+def delete(id):
+    db = get_db()
+    db.execute("""DELETE FROM recipes WHERE id = ?;""",(id,))
+    db.commit()
+    flash('You successfully deleted this recipe.')
+    return redirect(url_for('home'))
+
+@app.route('/favourite/<int:id>', methods=['GET', 'POST'])
+@login_required
+def favourite(id):
+    db = get_db()
+    isFavourite = db.execute("SELECT * FROM favourites WHERE recipe_id = ? AND username = ?;", (id, g.user)).fetchone()
+    if isFavourite: #it is already fav, so when clicked it becomes not favourite
+        db.execute("""DELETE FROM favourites WHERE recipe_id = ? AND username = ?;""",(id, g.user))
+        db.commit()
+        flash('You have removed this recipe from favourites.')
+    else:
+        db.execute("""INSERT INTO favourites(recipe_id, username)
+                   VALUES (?,?);""",(id, g.user))
+        db.commit()
+        flash("You have added this recipe to favourites.")
+    return redirect(url_for('open_recipe', id = id))
+
+@app.route('/open_favourites/<username>', methods=['GET', 'POST'])
+@login_required
+def open_favourites(username):
+    form = Filters()
+    db = get_db()
+    recipes = db.execute(
+        """SELECT * FROM recipes
+        WHERE id in (
+            SELECT recipe_id FROM favourites
+            WHERE username = ?
+        );""", (g.user,)).fetchall()
+    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
+        filters.append(form.type_checkboxes.data)
+        if g.user:
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
+        else:
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    if g.user:
+        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
+    else:
+        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+     
+
+#here we check the filters and execute searches based on them
+def checkFilters():
+    return
+
+filters = []
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
 def home():
+    form = Filters()
     db = get_db()
     recipes = db.execute(
         """SELECT * FROM recipes;""").fetchall()
+    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
+        filters.append(form.type_checkboxes.data)
+        if g.user:
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
+        else:
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
     if g.user:
-        return render_template('index.html', recipes = recipes, notGuest = True)
+        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
     else:
-        return render_template('index.html', recipes = recipes, notGuest = False)
-
-@app.route('/open_recipe/<id>', methods = ['GET', 'POST'])
+        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+     
+@app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
 def open_recipe(id):
     form = UploadForm()
     db = get_db()
+    
     publisher = db.execute("""
         SELECT users.username AS username
         FROM recipes
         JOIN users ON recipes.username = users.username
-        WHERE recipes.id = ?;""", (id,)).fetchone()
-    if publisher['username'] == g.user:
-        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
-        return render_template('open_recipe.html', recipe = recipe, publisher=True, form=form)
+        WHERE recipes.id = ?;
+        """, (id,)).fetchone()
+    
+    favourite = db.execute("""
+        SELECT * FROM recipes as r
+        JOIN favourites as f ON r.id = f.recipe_id
+        WHERE id = ?;
+        """, (id,)).fetchone()
+    
+    if favourite:
+        filename = 'star_full.png'
     else:
-        recipe = db.execute("SELECT * FROM recipes WHERE id = ?",(id,)).fetchone()
-        return render_template('open_recipe.html', recipe = recipe, publisher=False, form=form)
+        filename = 'star_empty.png'
+    
+    if publisher and publisher['username'] is not None:
+        if publisher['username'] == g.user or g.user == 'admin':
+            notGuest = True if g.user else False
+            recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
+            return render_template('open_recipe.html', recipe=recipe, publisher=True, form=form, notGuest=notGuest, filename=filename)
+        else:
+            notGuest = True if g.user else False
+            recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
+            return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename)
+    else:
+        return "Publisher not found", 404
+
