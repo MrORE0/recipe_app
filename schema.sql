@@ -41,7 +41,8 @@ CREATE TABLE favourites (
 
 SELECT * FROM recipes;
 
-SELECT users.username AS publisher
-FROM recipes
-JOIN users ON recipes.username = users.username
-WHERE recipes.id = '2';
+
+SELECT r.username AS username FROM recipes as r
+        JOIN favourites AS f ON r.id = f.recipe_id
+        JOIN users AS u ON f.username = u.username
+        WHERE id = 1;

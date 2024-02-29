@@ -203,6 +203,26 @@ def open_favourites(username):
         return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
      
 
+@app.route('/open_my_recipes/<username>', methods=['GET', 'POST'])
+@login_required
+def open_my_recipes(username):
+    form = Filters()
+    db = get_db()
+    recipes = db.execute(
+        """SELECT * FROM recipes
+        WHERE username = ? ;""", (g.user,)).fetchall()
+    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
+        filters.append(form.type_checkboxes.data)
+        if g.user:
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
+        else:
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    if g.user:
+        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
+    else:
+        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    
+
 #here we check the filters and execute searches based on them
 def checkFilters():
     return
@@ -239,16 +259,20 @@ def open_recipe(id):
         """, (id,)).fetchone()
     
     favourite = db.execute("""
-        SELECT * FROM recipes as r
-        JOIN favourites as f ON r.id = f.recipe_id
-        WHERE id = ?;
-        """, (id,)).fetchone()
+        SELECT f.username AS username FROM recipes as r
+        JOIN favourites AS f ON r.id = f.recipe_id
+        JOIN users AS u ON f.username = u.username
+        WHERE id = ?;""", (id,)).fetchall()
     
     if favourite:
-        filename = 'star_full.png'
+        for users in favourite:
+            if g.user in users['username']:
+                filename = 'star_full.png'
+            else:
+                filename = 'star_empty.png'
     else:
         filename = 'star_empty.png'
-    
+
     if publisher and publisher['username'] is not None:
         if publisher['username'] == g.user or g.user == 'admin':
             notGuest = True if g.user else False

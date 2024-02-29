@@ -1,14 +1,19 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-   <section class="all_recipes">
-        {% for recipe in recipes %}
-                <a href="{{ url_for('open_recipe', id = recipe['id']) }}">
-                    <section>
-                        <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="">
-                        <h2>{{recipe['title']}}</h2>
-                    </section>
-                </a>
-        {% endfor %}
-   </section>
+    {% if recipes %}
+    <section class="all_recipes">
+            {% for recipe in recipes %}
+                    <a href="{{ url_for('open_recipe', id = recipe['id']) }}">
+                        <section>
+                            <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="">
+                            <h2>{{recipe['title']}}</h2>
+                        </section>
+                    </a>
+            {% endfor %}
+    </section>
+    {% else %}
+            <p>No recipes were found.</p>
+   {% endif %}
+
 {% endblock %}
