@@ -6,7 +6,7 @@
 
         {{form.username.label}}
         {{form.username()}}
-        {% for error in form.username.error %}
+        {% for error in form.username.errors %}
                 {{ error }}
         {% endfor %}
         
@@ -14,7 +14,7 @@
 
         {{form.password.label}}
         {{form.password()}}
-        {% for error in form.password.error %}
+        {% for error in form.password.errors %}
             {{ error }}
         {% endfor %}
         <br />

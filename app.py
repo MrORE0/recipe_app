@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, make_response, request, url_for, g, session, flash
 from database import get_db, close_db 
-from forms import RegistrationForm, LoginForm, UploadForm, Filters
+from forms import RegistrationForm, LoginForm, UploadForm, Filters, ReviewForm
 from functools import wraps
 import os
 #hashing the password including salting
@@ -180,6 +180,19 @@ def favourite(id):
         flash("You have added this recipe to favourites.")
     return redirect(url_for('open_recipe', id = id))
 
+# here we load the recipes for home and favourites
+def loading_recipes(form, recipes, filters):
+    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
+        filters.append(form.type_checkboxes.data)
+        if g.user:
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
+        else:
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    if g.user:
+        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
+    else:
+        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+
 @app.route('/open_favourites/<username>', methods=['GET', 'POST'])
 @login_required
 def open_favourites(username):
@@ -191,17 +204,9 @@ def open_favourites(username):
             SELECT recipe_id FROM favourites
             WHERE username = ?
         );""", (g.user,)).fetchall()
-    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
-        filters.append(form.type_checkboxes.data)
-        if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
-        else:
-            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
-    if g.user:
-        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
-    else:
-        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
-     
+    filters = []
+    return loading_recipes(form, recipes, filters)
+
 
 @app.route('/open_my_recipes/<username>', methods=['GET', 'POST'])
 @login_required
@@ -211,16 +216,8 @@ def open_my_recipes(username):
     recipes = db.execute(
         """SELECT * FROM recipes
         WHERE username = ? ;""", (g.user,)).fetchall()
-    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
-        filters.append(form.type_checkboxes.data)
-        if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
-        else:
-            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
-    if g.user:
-        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
-    else:
-        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    filters = []
+    return loading_recipes(form, recipes, filters)
     
 
 #here we check the filters and execute searches based on them
@@ -235,53 +232,67 @@ def home():
     db = get_db()
     recipes = db.execute(
         """SELECT * FROM recipes;""").fetchall()
-    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
-        filters.append(form.type_checkboxes.data)
-        if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
-        else:
-            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
-    if g.user:
-        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
-    else:
-        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+    filters = []
+    return loading_recipes(form, recipes, filters)
      
 @app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
 def open_recipe(id):
     form = UploadForm()
+    review_form = ReviewForm()
     db = get_db()
-    
-    publisher = db.execute("""
-        SELECT users.username AS username
-        FROM recipes
-        JOIN users ON recipes.username = users.username
-        WHERE recipes.id = ?;
-        """, (id,)).fetchone()
-    
-    favourite = db.execute("""
-        SELECT f.username AS username FROM recipes as r
-        JOIN favourites AS f ON r.id = f.recipe_id
-        JOIN users AS u ON f.username = u.username
-        WHERE id = ?;""", (id,)).fetchall()
-    
-    if favourite:
-        for users in favourite:
-            if g.user in users['username']:
-                filename = 'star_full.png'
-            else:
-                filename = 'star_empty.png'
+    reviews = db.execute("""SELECT * FROM reviews
+                WHERE recipe_id = ?;""", (id,)).fetchall()
+    # Submitting review
+    if review_form.validate_on_submit():
+        db.execute(
+            """INSERT INTO reviews (recipe_id, username, feedback, score)
+            VALUES (?, ?, ?, ?);""",
+            (id, g.user, review_form.feedback.data, review_form.score.data)
+        )
+        db.commit()
+        # Reset the review_form fields after successful submission
+        review_form.score.data = 0
+        review_form.feedback.data = ''
+        # Redirect to the same recipe page after submitting the review
+        return redirect(url_for('open_recipe', id=id))
     else:
-        filename = 'star_empty.png'
+        review_form.score.data = 0
+        review_form.feedback.data = ''
+        publisher = db.execute("""
+            SELECT users.username AS username
+            FROM recipes
+            JOIN users ON recipes.username = users.username
+            WHERE recipes.id = ?;
+            """, (id,)).fetchone()
 
-    if publisher and publisher['username'] is not None:
-        if publisher['username'] == g.user or g.user == 'admin':
-            notGuest = True if g.user else False
-            recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
-            return render_template('open_recipe.html', recipe=recipe, publisher=True, form=form, notGuest=notGuest, filename=filename)
+        favourite = db.execute("""
+            SELECT f.username AS username FROM recipes as r
+            JOIN favourites AS f ON r.id = f.recipe_id
+            JOIN users AS u ON f.username = u.username
+            WHERE id = ?;""", (id,)).fetchall()
+        
+        if favourite:
+            for users in favourite:
+                if g.user in users['username']:
+                    filename = 'star_full.png'
+                else:
+                    filename = 'star_empty.png'
         else:
-            notGuest = True if g.user else False
-            recipe = db.execute("SELECT * FROM recipes WHERE id = ?", (id,)).fetchone()
-            return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename)
-    else:
-        return "Publisher not found", 404
+            filename = 'star_empty.png'
+        notGuest = True if g.user else False # essentially checks if you are logged in or not
+        avg_score = db.execute("""SELECT AVG(score) AS score
+                                FROM reviews
+                                WHERE recipe_id = ?;""", (id,)).fetchone()
+        if publisher and publisher['username'] is not None:
+            if publisher['username'] == g.user or g.user == 'admin':
+                has_reviewed = True
+                recipe = db.execute("SELECT * FROM recipes WHERE id = ?;", (id,)).fetchone()
+                return render_template('open_recipe.html', recipe=recipe, publisher=True, form=form, notGuest=notGuest, filename=filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'])
+            else:
+                 # Check if the current user has not left a review for this recipe
+                has_reviewed = any(review['username'] == g.user for review in reviews)
+                recipe = db.execute("SELECT * FROM recipes WHERE id = ?;", (id,)).fetchone()
+                return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'])
+        else:
+            return "Recipe not found", 404
 

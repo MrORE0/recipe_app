@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, DecimalField, SelectField, SelectMultipleField, widgets
+from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField
 from wtforms.validators import InputRequired, EqualTo, Regexp, NumberRange
 
 class RegistrationForm(FlaskForm):
@@ -32,8 +32,8 @@ class UploadForm(FlaskForm):
     delete = SubmitField('Delete')
 class ReviewForm(FlaskForm):
     feedback = StringField('Feedback:', validators=[InputRequired()])
-    score = DecimalField('Score', validators=[InputRequired(), NumberRange(1,5)])
-    submit = SubmitField('Comment')
+    score = IntegerField('Score', validators=[InputRequired(), NumberRange(1,5)])
+    submit = SubmitField('Submit')
 
 class Filters(FlaskForm):
     type_filters = [('Breakfast', 'breakfast'), ('Lunch', 'Lunch'), ('Dinner', 'dinner'), ('Snack', 'snack')]
