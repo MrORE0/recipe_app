@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField
 from wtforms.validators import InputRequired, EqualTo, Regexp, NumberRange
-
+from wtforms.widgets import CheckboxInput, ListWidget
 class RegistrationForm(FlaskForm):
     username = StringField('Username:', validators=[InputRequired(),Regexp('^[A-Za-z][A-Za-z0-9_.]*$', 0,
                                                                             'Usernames must have only letters, numbers, underscores or dots')])
@@ -36,7 +36,8 @@ class ReviewForm(FlaskForm):
     submit = SubmitField('Submit')
 
 class Filters(FlaskForm):
-    type_filters = [('Breakfast', 'breakfast'), ('Lunch', 'Lunch'), ('Dinner', 'dinner'), ('Snack', 'snack')]
+    type_filters = [("type = 'Breakfast'", "Breakfast"), ("type = 'Lunch'", "Lunch"), ("type = 'Dinner'", "Dinner"), ("type = 'Snack'", "Snack")]
     #this is usually a dropdown menu, but with the option_widget we render it as checkboxes that can be selected
-    type_checkboxes = SelectMultipleField('Type:', choices=type_filters, option_widget=widgets.CheckboxInput())
+    type_checkboxes = SelectMultipleField('Type:', choices=type_filters,option_widget=CheckboxInput(), widget=ListWidget(prefix_label=False))
     submit = SubmitField('Filter')
+    

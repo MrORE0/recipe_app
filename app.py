@@ -182,8 +182,8 @@ def favourite(id):
 
 # here we load the recipes for home and favourites
 def loading_recipes(form, recipes, filters):
+
     if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
-        filters.append(form.type_checkboxes.data)
         if g.user:
             return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
         else:
@@ -230,9 +230,16 @@ filters = []
 def home():
     form = Filters()
     db = get_db()
-    recipes = db.execute(
-        """SELECT * FROM recipes;""").fetchall()
-    filters = []
+    filters = form.type_checkboxes.data
+    if filters:
+        filter_str = ' OR '.join(filters)
+        query = f"""SELECT * FROM recipes
+            WHERE {filter_str};"""
+        recipes = db.execute(query).fetchall()
+        print(query)
+    else:
+        recipes = db.execute(
+            """SELECT * FROM recipes;""").fetchall()
     return loading_recipes(form, recipes, filters)
      
 @app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
@@ -296,7 +303,7 @@ def open_recipe(id):
         else:
             return "Recipe not found", 404
 
-# not found error
+# 404 not found error
 @app.errorhandler(404)
 def not_found(e): 
   return render_template("404.html") 

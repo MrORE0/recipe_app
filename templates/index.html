@@ -15,5 +15,15 @@
     {% else %}
             <p>No recipes were found.</p>
    {% endif %}
-
+   <aside>
+        <form action="" method="post" novalidate>
+            {% for filter in form.type_checkboxes %}
+                {{ filter(class="form-check-input") }}
+                {{ filter.label(class="form-check-label") }}
+            {% endfor %}
+            <br>
+            {{form.submit()}}
+            <p>{{message}}</p>
+        </form>
+    </aside>
 {% endblock %}
