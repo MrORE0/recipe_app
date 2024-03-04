@@ -221,25 +221,24 @@ def open_my_recipes(username):
     
 
 #here we check the filters and execute searches based on them
-def checkFilters():
-    return
-
-filters = []
-@app.route('/', methods = ['GET', 'POST'])
-@app.route('/home', methods = ['GET', 'POST'])
-def home():
-    form = Filters()
+def checkFilters(filters):
     db = get_db()
-    filters = form.type_checkboxes.data
     if filters:
         filter_str = ' OR '.join(filters)
         query = f"""SELECT * FROM recipes
             WHERE {filter_str};"""
         recipes = db.execute(query).fetchall()
-        print(query)
     else:
         recipes = db.execute(
             """SELECT * FROM recipes;""").fetchall()
+    return recipes
+
+@app.route('/', methods = ['GET', 'POST'])
+@app.route('/home', methods = ['GET', 'POST'])
+def home():
+    form = Filters()
+    filters = form.type_checkboxes.data
+    recipes = checkFilters(filters)
     return loading_recipes(form, recipes, filters)
      
 @app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
