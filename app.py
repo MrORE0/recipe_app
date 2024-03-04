@@ -296,3 +296,7 @@ def open_recipe(id):
         else:
             return "Recipe not found", 404
 
+# not found error
+@app.errorhandler(404)
+def not_found(e): 
+  return render_template("404.html") 
