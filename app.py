@@ -277,12 +277,15 @@ def open_recipe(id):
             JOIN users AS u ON f.username = u.username
             WHERE id = ?;""", (id,)).fetchall()
         
-        if favourite:
-            for users in favourite:
-                if g.user in users['username']:
-                    filename = 'star_full.png'
-                else:
-                    filename = 'star_empty.png'
+        if g.user:
+            if favourite:
+                for users in favourite:
+                    if g.user in users['username']:
+                        filename = 'star_full.png'
+                    else:
+                        filename = 'star_empty.png'
+            else:
+                filename = 'star_empty.png'
         else:
             filename = 'star_empty.png'
         notGuest = True if g.user else False # essentially checks if you are logged in or not

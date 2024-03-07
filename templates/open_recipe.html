@@ -1,56 +1,65 @@
 {% extends "base.html" %}
 
 {% block main_content %}
+<div class="max-w-lg mx-auto">
+  {% if publisher == True %}
+  <div class="flex justify-between mb-4">
+    <a href="{{ url_for('edit', id = recipe['id']) }}" class="inline-block bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">{{form.edit()}}</a>
+    <a href="{{ url_for('delete', id = recipe['id']) }}" class="inline-block bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">{{form.delete()}}</a>
+  </div>
+  {% endif %}
 
-    {% if publisher == True %}
-     <a href="{{ url_for('edit', id = recipe['id']) }}">{{form.edit()}}</a>
-     <a href="{{ url_for('delete', id = recipe['id']) }}">{{form.delete()}}</a>
+  <section class="open_recipe bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+    <h2 class="text-3xl font-bold">{{recipe['title']}}</h2>
+    <h5 class="text-lg text-gray-600">Average score: {{avg_score}}</h5>
+    <a href="{{ url_for('favourite', id = recipe['id']) }}" class="inline-block mt-2">
+      <img src="{{ url_for('static', filename = filename) }}" alt="an image of a star" class="w-6 h-6 rounded-full">
+    </a>
+    <p class="text-gray-700 mt-4">Type: {{recipe['type']}}</p>
+    <p class="text-gray-700" font-semibold>Allergies: {{recipe['allergies']}}</p>
+    <p class="text-gray-700">Published by: {{recipe['username']}}</p>
+    <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="{{ recipe['title'] }}" class="mt-4 rounded-lg shadow-lg h-96.2 w-full object-cover">
+    <p class="text-gray-700 mt-4 ">Ingredients: {{recipe['ingredients']}}</p>
+    <p class="text-gray-700">Steps: {{recipe['steps']}}</p>
+  </section>
+
+  <section class="reviews bg-white shadow-md rounded px-8 pt-6 pb-8 mb-8">
+    <h2 class="text-2xl font-bold">Reviews</h2>
+    <!-- button to add review -->
+    {% if user is not none %}
+    {% if has_reviewed == False %}
+    <form action="" method="post" novalidate class="mt-4">
+      {{review_form.hidden_tag()}}
+
+      <div class="mb-4">
+        {{review_form.score.label(class="block text-gray-700 text-sm font-bold mb-2")}}
+        {{review_form.score(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline")}}
+        {% for error in review_form.score.errors %}
+        <p class="text-red-500 text-xs italic">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="mb-12">
+        {{review_form.feedback.label(class="block text-gray-700 text-sm font-bold mb-2")}}
+        {{review_form.feedback(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline")}}
+        {% for error in review_form.feedback.errors %}
+        <p class="text-red-500 text-xs italic">{{ error }}</p>
+        {% endfor %}
+      </div>
+
+      {{review_form.submit(class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline")}}
+    </form>
+    {% endif %}
     {% endif %}
 
-   <section class="open_recipe">
-        <h2>{{recipe['title']}}</h2>
-        <h5>Average score: {{avg_score}}</h5>
-        <a href="{{ url_for('favourite', id = recipe['id']) }}"><img src="{{ url_for('static', filename = filename) }}" alt="an image of a star"></a>
-        <p>type: {{recipe['type']}}</p>
-        <p>Allergies: {{recipe['allergies']}}</p>
-        <p>Published by: {{recipe['username']}}</p>
-        <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="recipe['title']">
-        <p>Ingredients: {{recipe['ingredients']}}</p>
-        <p>Steps: {{recipe['steps']}}</p>
-   </section>
-
-   <section class="reviews">
-     <h2>Reviews</h2>
-      <!-- button to add review -->
-      {% if user is not none %}
-          {% if has_reviewed == False %}
-               <form action="" method="post" novalidate>
-                    {{review_form.hidden_tag()}}
-
-                    {{review_form.score.label}}
-                    {{review_form.score()}}
-                    {% for error in review_form.score.errors %}
-                         {{ error }}
-                    {% endfor %}
-                    <br />
-                    {{review_form.feedback.label}}
-                    {{review_form.feedback()}}
-                    {% for error in review_form.feedback.errors %}
-                         {{ error }}
-                    {% endfor %}
-                    <br />
-                    {{review_form.submit()}}
-               </form>
-          {% endif %}
-     {% endif %}
-
-     {% for review in reviews %}  
-          <section class="review">
-               <h5>{{review['username']}}</h5>
-               <!-- will need to change the score to something different -->
-               <p>{{review['score']}}</p>
-               <p>{{review['feedback']}}</p>
-          </section>
-     {% endfor %}
-   </section>
+    {% for review in reviews %}
+    <section class="review bg-gray-100 p-4 mt-4 mb-20">
+      <h5 class="text-lg font-bold">{{review['username']}}</h5>
+      <!-- will need to change the score to something different -->
+      <p class="text-gray-700">Score: {{review['score']}}</p>
+      <p class="text-gray-700">Feedback: {{review['feedback']}}</p>
+    </section>
+    {% endfor %}
+  </section>
+</div>
 {% endblock %}

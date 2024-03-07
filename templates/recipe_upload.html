@@ -1,33 +1,44 @@
 {% extends "base.html" %}
 
-{% block main_content%}
-    <form action="" method="post" novalidate enctype="multipart/form-data">
-        {{form.hidden_tag()}}
+{% block main_content %}
+<div class="flex flex-col space-y-4 max-w-2xl mx-auto">
+  <form action="" method="post" novalidate enctype="multipart/form-data" class="shadow-md rounded p-6 bg-white">
+    {{ form.hidden_tag() }}
 
-        {{form.title.label}}
-        {{form.title()}}
-        <br />
+    <div class="flex flex-col mb-4">
+      <label for="{{ form.title.id }}" class="text-sm font-bold text-gray-700">Recipe Title</label>
+      <input type="text" id="{{ form.title.id }}" name="title" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
 
-        {{form.ingredients.label}}
-        {{form.ingredients()}}
-        <br />
+    <div class="flex flex-col mb-4">
+  <label for="{{ form.ingredients.id }}" class="text-sm font-bold text-gray-700">Ingredients (separate each ingredient with a comma)</label>
+  <textarea id="{{ form.ingredients.id }}" name="ingredients" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3"></textarea>
+</div>
+
+    <div class="flex flex-col mb-4">
+      <label for="{{ form.steps.id }}" class="text-sm font-bold text-gray-700">Steps (number each step)</label>
+      <textarea id="{{ form.steps.id }}" name="steps" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="8"></textarea>
+    </div>
+
+    <div class="flex flex-col mb-4">
+      <label for="{{ form.allergies.id }}" class="text-sm font-bold text-gray-700">Allergies (separate each allergy with a comma)</label>
+      <input type="text" id="{{ form.allergies.id }}" name="allergies" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+    </div>
+
+    <div class="flex flex-col mb-4">
+        <label for="{{ form.type.id }}" class="text-sm font-bold text-gray-700">Type</label>
         
-        {{form.steps.label}}
-        {{form.steps()}}
-        <br />
+          {{ form.type(class="block w-full") }} 
+      </div>
 
-        {{form.allergies.label}}
-        {{form.allergies()}}
-        <br />
+    <div class="flex items-center mb-4">
+      <label for="file" class="text-sm font-bold text-gray-700 mr-2">Upload Image</label>
+      <input type="file" id="file" name="file" class="block w-full p-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+    </div>
 
-        {{form.type.label}}
-        {{form.type()}}
-        <br />
-
-        <input type = "file" name = "file" />
-        <br />
-
-        {{form.submit()}}
-    </form>
+    <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+      Submit Recipe
+    </button>
+  </form>
+</div>
 {% endblock %}
-

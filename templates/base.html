@@ -6,22 +6,23 @@
     <title>Grumpy Cooks</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <link rel="icon" href="{{ url_for('static', filename='chef.ico') }}">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <header>
-        <!-- should not appear in login and register -->
+<body class="min-h-screen flex flex-col"> <header class="bg-gray-800 text-white">
         {% block header_content %}
-            <nav>
-                <ul>
-                    <li><a href="{{ url_for('home') }}">Home</a></li>
-                    <li><a href="{{ url_for('upload') }}">Upload recipe</a></li>
+            <nav class="flex justify-between px-4 py-2">
+               <a href="{{ url_for('home') }}"><h1 class="text-xl font-bold">Grumpy Cooks</h1></a>
+                <ul class="flex space-x-4">
+                    <li><a href="{{ url_for('home') }}" class="hover:text-gray-400">Home</a></li>
+                    <li><a href="{{ url_for('upload') }}" class="hover:text-gray-400">Upload recipe</a></li>
                     {% if notGuest %}
-                        <li><a href="{{ url_for('open_favourites', username = g.user) }}">Favourites</a></li>
-                        <li><a href="{{ url_for('open_my_recipes', username = g.user) }}">My Recipes</a></li>
-                        <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                        <li><a href="{{ url_for('open_favourites', username = g.user) }}" class="hover:text-gray-400">Favourites</a></li>
+                        <li><a href="{{ url_for('open_my_recipes', username = g.user) }}" class="hover:text-gray-400">My Recipes</a></li>
+                        <li><a href="{{ url_for('logout') }}" class="hover:text-gray-400">Logout</a></li>
                     {% else %}
-                        <li><a href="{{ url_for('login') }}">Login</a></li>
-                        <li><a href="{{ url_for('register') }}">Register</a></li>
+                        <li><a href="{{ url_for('login') }}" class="hover:text-gray-400">Login</a></li>
+                        <li><a href="{{ url_for('register') }}" class="hover:text-gray-400">Register</a></li>
                     {% endif %}
                 </ul>
             </nav>
@@ -29,16 +30,29 @@
     </header>
 
     <main>
-        {% block main_content %}
-        {% endblock %}
-    </main>
+      {% block main_content %}
+      {% endblock %}
+  </main>
 
-    <footer>
+    <footer class="bg-gray-200 text-gray-700 py-4 flex justify-center items-center fixed bottom-0 w-full">
         {% block footer_content %}
-            <section class="email">
-                <p>Support: <a href="mailto:">help_GrumpyCooks@gmail.com</a></p>
-            </section>
-        {% endblock %}
-    </footer>
-</body>
+          <section class="email text-center">
+            <p>Support: <a href="mailto:help@GrumpyCooks.com" class="text-blue-500 hover:underline">help@GrumpyCooks.com</a></p>      
+          <p>You can also find us on:</p>
+          <ul class="flex items-center justify-center space-x-4">
+            <li>
+              <a href="https://www.facebook.com/">
+                <img src="{{ url_for('static', filename = 'facebook.png') }}" alt="Facebook icon" class="w-6 h-6 fill-gray-700 hover:fill-blue-500">
+              </a>
+            </li>
+            <li>
+              <a href="https://twitter.com/">
+                <img src="{{ url_for('static', filename = 'twitter.png') }}" alt="Twitter icon" class="w-6 h-6 fill-gray-700 hover:fill-blue-500">
+              </a>
+            </li>
+          </ul>
+          </section>
+      </footer>
+      {% endblock %}
+    </body>
 </html>

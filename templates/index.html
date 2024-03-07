@@ -1,29 +1,37 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-    {% if recipes %}
-    <section class="all_recipes">
-            {% for recipe in recipes %}
-                    <a href="{{ url_for('open_recipe', id = recipe['id']) }}">
-                        <section>
-                            <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="">
-                            <h2>{{recipe['title']}}</h2>
-                        </section>
-                    </a>
-            {% endfor %}
-    </section>
-    {% else %}
-            <p>No recipes were found.</p>
-   {% endif %}
-   <aside>
+<div class="flex min-h-screen">
+    <aside class="bg-gray-100 w-1/5r p-4 mr-4">
         <form action="" method="post" novalidate>
             {% for filter in form.type_checkboxes %}
-                {{ filter(class="form-check-input") }}
-                {{ filter.label(class="form-check-label") }}
+                <div class="flex items-center mb-2">
+                    {{ filter(class="form-check-input") }}
+                    <label for="{{ filter.id }}" class="ml-2 text-gray-700">{{ filter.label }}</label>
+                </div>
             {% endfor %}
             <br>
-            {{form.submit()}}
-            <p>{{message}}</p>
+            {{ form.submit(class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-2 rounded") }}
         </form>
     </aside>
+
+    <main class="flex-grow p-4">
+        <section class="all_recipes">
+            {% if recipes %}
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4"> 
+                    {% for recipe in recipes %}
+                            <a href="{{ url_for('open_recipe', id=recipe['id']) }}" class="group block rounded overflow-hidden shadow-md hover:shadow-lg">
+                                <img src="{{ url_for('static', filename=recipe['image_path']) }}" alt="{{ recipe['title'] }}" class="w-full h-48 object-cover group-hover:scale-110">
+                                <div class="p-4">
+                                    <h2 class="text-xl font-bold tracking-wide">{{ recipe['title'] }}</h2>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+            {% else %}
+                <p class="text-center">No recipes were found.</p>
+            {% endif %}
+        </section>
+    </main>
+</div>
 {% endblock %}

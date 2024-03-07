@@ -1,27 +1,28 @@
 {% extends "base.html" %}
 
 {% block main_content %}
-    <form action="" method="POST" novalidate>
-        {{form.hidden_tag()}}
+<form action="" method="POST" novalidate class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 w-6/12 m-auto mt-20">
+    {{ form.hidden_tag() }}
 
-        {{form.username.label}}
-        {{form.username()}}
+    <div class="mb-4">
+        {{ form.username.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+        {{ form.username(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
         {% for error in form.username.errors %}
-                {{ error }}
+            <p class='text-red-500 text-xs italic'>{{ error }}</p>
         {% endfor %}
-        
-        <br />
+    </div>
 
-        {{form.password.label}}
-        {{form.password()}}
+    <div class="mb-6">
+        {{ form.password.label(class="block text-gray-700 text-sm font-bold mb-2") }}
+        {{ form.password(type="password", class="shadow appearance-none border border-red-500 rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline") }}
         {% for error in form.password.errors %}
-            {{ error }}
+            <p class='text-red-500 text-xs italic'>{{ error }}</p>
         {% endfor %}
-        <br />
+    </div>
 
-        {{form.submit()}}
-        <br />
-        <a href="{{ url_for('register') }}">Don't have an account? Register now.</a>
-        <p>{{message}}</p>
-    </form>
+    <div class="flex items-center justify-between">
+        {{ form.submit(class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline") }}
+        <a href="{{ url_for('register') }}" class="inline-block align-baseline font-bold text-sm text-blue-500 hover:text-blue-800">Don't have an account? Register now.</a>
+    </div>
+</form>
 {% endblock %}
