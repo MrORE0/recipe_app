@@ -133,7 +133,8 @@ def upload():
     form = UploadForm()
     if process_recipe_form(None):
         return redirect('/home')
-    return render_template('recipe_upload.html', form=form)
+    notGuest = bool(g.user) #if g.user exists 
+    return render_template('recipe_upload.html', form=form, notGuest = notGuest)
 
 
 @app.route('/edit/<int:id>', methods=['GET', 'POST'])
@@ -153,7 +154,8 @@ def edit(id):
 
     if process_recipe_form(recipe):
         return redirect(url_for('open_recipe', id=id))
-    return render_template('recipe_upload.html', form=form)
+    notGuest = bool(g.user) #if g.user exists 
+    return render_template('recipe_upload.html', form=form, notGuest = notGuest)
 
 @app.route('/delete/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -182,16 +184,10 @@ def favourite(id):
 
 # here we load the recipes for home and favourites
 def loading_recipes(form, recipes, filters):
-
-    if form.validate_on_submit(): #this part doesn't work properly!!!!!!!!!!!!!!!!
         if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
         else:
             return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
-    if g.user:
-        return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
-    else:
-        return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
 
 @app.route('/open_favourites/<username>', methods=['GET', 'POST'])
 @login_required
@@ -238,9 +234,24 @@ def checkFilters(filters):
 def home():
     form = Filters()
     filters = form.type_checkboxes.data
-    recipes = checkFilters(filters)
+    prompt = form.search.data
+    if prompt:
+        return search_for(prompt = prompt, filters = filters)
+    else:
+        recipes = checkFilters(filters)
     return loading_recipes(form, recipes, filters)
-     
+
+def search_for(prompt, filters):
+    db = get_db()
+    form = Filters()
+    recipes = checkFilters(filters)
+    if recipes:
+        searched_for = [recipe for recipe in recipes if prompt.lower() in recipe['title'].lower()]
+    else:
+        searched_for = db.execute("""SELECT * FROM recipes
+                                    WHERE title LIKE ?;""", ('%' + prompt + '%',)).fetchall()
+    return loading_recipes(form, searched_for, filters)
+
 @app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
 def open_recipe(id):
     form = UploadForm()

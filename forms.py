@@ -39,5 +39,6 @@ class Filters(FlaskForm):
     type_filters = [("type = 'Breakfast'", "Breakfast"), ("type = 'Lunch'", "Lunch"), ("type = 'Dinner'", "Dinner"), ("type = 'Snack'", "Snack")]
     #this is usually a dropdown menu, but with the option_widget we render it as checkboxes that can be selected
     type_checkboxes = SelectMultipleField('Type:', choices=type_filters,option_widget=CheckboxInput(), widget=ListWidget(prefix_label=False))
-    submit = SubmitField('Filter')
+    search = StringField('Search for:', validators=[Regexp(r'^[A-Za-z]+$')])
+    submit = SubmitField('Search')
     

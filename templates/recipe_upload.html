@@ -7,29 +7,28 @@
 
     <div class="flex flex-col mb-4">
       <label for="{{ form.title.id }}" class="text-sm font-bold text-gray-700">Recipe Title</label>
-      <input type="text" id="{{ form.title.id }}" name="title" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      {{ form.title(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
     </div>
 
     <div class="flex flex-col mb-4">
-  <label for="{{ form.ingredients.id }}" class="text-sm font-bold text-gray-700">Ingredients (separate each ingredient with a comma)</label>
-  <textarea id="{{ form.ingredients.id }}" name="ingredients" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="3"></textarea>
-</div>
+      <label for="{{ form.ingredients.id }}" class="text-sm font-bold text-gray-700">Ingredients (separate each ingredient with a comma)</label>
+      {{ form.ingredients(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", rows="3") }}
+    </div>
 
     <div class="flex flex-col mb-4">
       <label for="{{ form.steps.id }}" class="text-sm font-bold text-gray-700">Steps (number each step)</label>
-      <textarea id="{{ form.steps.id }}" name="steps" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" rows="8"></textarea>
+      {{ form.steps(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline", rows="8") }}
     </div>
 
     <div class="flex flex-col mb-4">
       <label for="{{ form.allergies.id }}" class="text-sm font-bold text-gray-700">Allergies (separate each allergy with a comma)</label>
-      <input type="text" id="{{ form.allergies.id }}" name="allergies" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+      {{ form.allergies(class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline") }}
     </div>
 
     <div class="flex flex-col mb-4">
-        <label for="{{ form.type.id }}" class="text-sm font-bold text-gray-700">Type</label>
-        
-          {{ form.type(class="block w-full") }} 
-      </div>
+      <label for="{{ form.type.id }}" class="text-sm font-bold text-gray-700">Type</label>
+      {{ form.type(class="block w-full") }}
+    </div>
 
     <div class="flex items-center mb-4">
       <label for="file" class="text-sm font-bold text-gray-700 mr-2">Upload Image</label>
