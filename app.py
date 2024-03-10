@@ -202,8 +202,15 @@ def open_favourites(username):
                 SELECT recipe_id FROM favourites
                 WHERE username = ?
             );""", (g.user,)).fetchall()
-    if prompt:
-        recipes = search_for(prompt, recipes, filters)
+    if prompt and filters:
+         # we need the intersection of both after filtering the passed recipes
+        searched_for = search_for(prompt, recipes)
+        filtered = checkFilters(recipes, filters)
+        recipes = list(set(searched_for) & set(filtered))
+    elif prompt:
+        recipes = search_for(prompt, recipes)
+    elif filters:
+        recipes = checkFilters(recipes, filters)
     return loading_recipes(form, recipes, filters)
 
 
@@ -217,23 +224,23 @@ def open_my_recipes(username):
     recipes = db.execute(
         """SELECT * FROM recipes
         WHERE username = ? ;""", (g.user,)).fetchall()
-    if prompt:
-        recipes = search_for(prompt, recipes, filters)
+    if prompt and filters:
+         # we need the intersection of both after filtering the passed recipes
+        searched_for = search_for(prompt, recipes)
+        filtered = checkFilters(recipes, filters)
+        recipes = list(set(searched_for) & set(filtered))
+    elif prompt:
+        recipes = search_for(prompt, recipes)
+    elif filters:
+        recipes = checkFilters(recipes, filters)
     return loading_recipes(form, recipes, filters)
     
 
 #here we check the filters and execute searches based on them
-def checkFilters(filters):
-    db = get_db()
-    if filters:
-        filter_str = ' OR '.join(filters)
-        query = f"""SELECT * FROM recipes
-            WHERE {filter_str};"""
-        recipes = db.execute(query).fetchall()
-    else:
-        recipes = db.execute(
-            """SELECT * FROM recipes;""").fetchall()
-    return recipes
+def checkFilters(recipes, filters):
+    # Filtering recipes based on the passed filters
+    filtered_recipes = [recipe for recipe in recipes if recipe['type'] in filters]
+    return filtered_recipes
 
 @app.route('/', methods = ['GET', 'POST'])
 @app.route('/home', methods = ['GET', 'POST'])
@@ -243,13 +250,18 @@ def home():
     filters = form.type_checkboxes.data
     prompt = form.search.data
     recipes = db.execute("""SELECT * FROM recipes;""").fetchall()
-    if prompt:
-        recipes =  search_for(prompt = prompt, filters = filters, recipes=recipes)
-    else: #always checks filters so if they are none, we can fetch everything
-        recipes = checkFilters(filters)
+    if prompt and filters:
+        # we need the intersection of both after filtering the passed recipes
+        searched_for = search_for(prompt, recipes)
+        filtered = checkFilters(recipes, filters)
+        recipes = list(set(searched_for) & set(filtered))
+    elif prompt:
+        recipes =  search_for(prompt = prompt, recipes=recipes)
+    elif filters:
+        recipes = checkFilters(recipes, filters)
     return loading_recipes(form, recipes, filters)
 
-def search_for(prompt, recipes, filters):
+def search_for(prompt, recipes):
     db = get_db()
     form = Filters()
     searched_for = [recipe for recipe in recipes if prompt.lower() in recipe['title'].lower()]
