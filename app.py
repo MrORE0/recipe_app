@@ -52,7 +52,7 @@ def register():
                 """INSERT INTO users (username, password)
                 VALUES (?, ?);""", (username, generate_password_hash(password)))
             db.commit()
-            return redirect('/login')
+            return redirect('login')
     return render_template('register.html', form = form, notGuest = False)
 
 @app.route('/login', methods = ['GET', 'POST'])
