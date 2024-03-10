@@ -194,13 +194,16 @@ def loading_recipes(form, recipes, filters):
 def open_favourites(username):
     form = Filters()
     db = get_db()
+    prompt = form.search.data
+    filters = form.type_checkboxes.data
     recipes = db.execute(
-        """SELECT * FROM recipes
-        WHERE id in (
-            SELECT recipe_id FROM favourites
-            WHERE username = ?
-        );""", (g.user,)).fetchall()
-    filters = []
+            """SELECT * FROM recipes
+            WHERE id in (
+                SELECT recipe_id FROM favourites
+                WHERE username = ?
+            );""", (g.user,)).fetchall()
+    if prompt:
+        recipes = search_for(prompt, recipes, filters)
     return loading_recipes(form, recipes, filters)
 
 
@@ -209,10 +212,13 @@ def open_favourites(username):
 def open_my_recipes(username):
     form = Filters()
     db = get_db()
+    prompt = form.search.data
+    filters = form.type_checkboxes.data
     recipes = db.execute(
         """SELECT * FROM recipes
         WHERE username = ? ;""", (g.user,)).fetchall()
-    filters = []
+    if prompt:
+        recipes = search_for(prompt, recipes, filters)
     return loading_recipes(form, recipes, filters)
     
 
@@ -233,24 +239,21 @@ def checkFilters(filters):
 @app.route('/home', methods = ['GET', 'POST'])
 def home():
     form = Filters()
+    db = get_db()
     filters = form.type_checkboxes.data
     prompt = form.search.data
+    recipes = db.execute("""SELECT * FROM recipes;""").fetchall()
     if prompt:
-        return search_for(prompt = prompt, filters = filters)
-    else:
+        recipes =  search_for(prompt = prompt, filters = filters, recipes=recipes)
+    else: #always checks filters so if they are none, we can fetch everything
         recipes = checkFilters(filters)
     return loading_recipes(form, recipes, filters)
 
-def search_for(prompt, filters):
+def search_for(prompt, recipes, filters):
     db = get_db()
     form = Filters()
-    recipes = checkFilters(filters)
-    if recipes:
-        searched_for = [recipe for recipe in recipes if prompt.lower() in recipe['title'].lower()]
-    else:
-        searched_for = db.execute("""SELECT * FROM recipes
-                                    WHERE title LIKE ?;""", ('%' + prompt + '%',)).fetchall()
-    return loading_recipes(form, searched_for, filters)
+    searched_for = [recipe for recipe in recipes if prompt.lower() in recipe['title'].lower()]
+    return searched_for
 
 @app.route('/open_recipe/<int:id>', methods=['GET', 'POST'])
 def open_recipe(id):
