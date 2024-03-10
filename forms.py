@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField
+from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField, FileField
 from wtforms.validators import InputRequired, EqualTo, Regexp, NumberRange
 from wtforms.widgets import CheckboxInput, ListWidget
 class RegistrationForm(FlaskForm):
@@ -23,12 +23,13 @@ class LoginForm(FlaskForm):
     
 class UploadForm(FlaskForm):
     title = StringField('Title:', validators=[InputRequired()])
-    ingredients = StringField('Ingredients:', validators=[InputRequired()]) #can I make it like a list??????
-    steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5}) #can I make it like a list??????
+    ingredients = StringField('Ingredients:', validators=[InputRequired()])
+    steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5})
     type = SelectField('Type(breakfast, lunch, dinner, snack):', choices=['Breakfast', 'Lunch', 'Dinner', 'Snack'], default='Breakfast')
     allergies = StringField('Allergies:')
-    submit = SubmitField('Publish')
-    edit = SubmitField('Edit')
+    file = FileField(validators=[InputRequired()])
+    submit = SubmitField('Publish Recipe')
+    edit = SubmitField('Edit Recipe')
     delete = SubmitField('Delete')
 class ReviewForm(FlaskForm):
     feedback = StringField('Feedback:', validators=[InputRequired()])
