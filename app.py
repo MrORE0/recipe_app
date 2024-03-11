@@ -3,6 +3,7 @@ from database import get_db, close_db
 from forms import RegistrationForm, LoginForm, UploadForm, Filters, ReviewForm
 from functools import wraps
 import os
+from random import choice
 #hashing the password including salting
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
@@ -330,6 +331,14 @@ def open_recipe(id):
                 return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'])
         else:
             return "Recipe not found", 404
+
+@app.route('/open_random_recipe', methods=['GET'])
+def open_random_recipe():
+    db = get_db()
+    recipes = db.execute("""SELECT id FROM recipes;""").fetchall()
+    random_recipe = choice(recipes) 
+    print(random_recipe)
+    return redirect(url_for('open_recipe', id = random_recipe['id']))
 
 # 404 not found error
 @app.errorhandler(404)

@@ -14,6 +14,7 @@
             <nav class="flex justify-between px-4 py-2">
                <a href="{{ url_for('home') }}"><h1 class="text-xl font-bold">Grumpy Cooks</h1></a>
                 <ul class="flex space-x-4">
+                    <li><a href="{{ url_for('open_random_recipe') }}" class="hover:text-gray-400">Random Recipe</a></li>
                     <li><a href="{{ url_for('home') }}" class="hover:text-gray-400">Home</a></li>
                     <li><a href="{{ url_for('upload') }}" class="hover:text-gray-400">Upload recipe</a></li>
                     {% if notGuest %}
