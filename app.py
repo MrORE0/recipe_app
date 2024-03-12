@@ -3,6 +3,8 @@ from database import get_db, close_db
 from forms import RegistrationForm, LoginForm, UploadForm, Filters, ReviewForm
 from functools import wraps
 import os
+import re
+import uuid
 from random import choice
 #hashing the password including salting
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -99,6 +101,9 @@ def process_recipe_form(recipe):
         if file:
             if allowed_file(file.filename):
                 filename = secure_filename(file.filename)
+                filename_parts = filename.split('.')
+                filename_parts[0] = str(uuid.uuid4())
+                filename = '.'.join(filename_parts)
                 image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 file.save(image_path)
                 image_path_db = image_path.strip('/static')
@@ -122,7 +127,7 @@ def process_recipe_form(recipe):
                 """UPDATE recipes
                 SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
                 WHERE id = ?;""",
-                (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
+                (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
             )
         db.commit()
         return True
@@ -381,12 +386,14 @@ def open_recipe(id):
             if publisher['username'] == g.user or g.user == 'admin':
                 has_reviewed = True
                 recipe = db.execute("SELECT * FROM recipes WHERE id = ?;", (id,)).fetchone()
-                return render_template('open_recipe.html', recipe=recipe, publisher=True, form=form, notGuest=notGuest, filename=filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'])
+                steps_string = recipe['steps']
+                numbered_steps = re.findall(r'\d+\.\s*.*?(?=\d+\.\s*|\Z)', steps_string, re.DOTALL) # a regular expression to split the step while keeping the number
+                return render_template('open_recipe.html', recipe=recipe, publisher=True, form=form, notGuest=notGuest, filename=filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'], steps = numbered_steps)
             else:
                  # Check if the current user has not left a review for this recipe
                 has_reviewed = any(review['username'] == g.user for review in reviews)
                 recipe = db.execute("SELECT * FROM recipes WHERE id = ?;", (id,)).fetchone()
-                return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'])
+                return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'], steps = numbered_steps)
         else:
             return "Recipe not found", 404
 

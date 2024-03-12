@@ -20,7 +20,14 @@
     <p class="text-gray-700">Published by: {{recipe['username']}}</p>
     <img src="{{ url_for('static', filename = recipe['image_path']) }}" alt="{{ recipe['title'] }}" class="mt-4 rounded-lg shadow-lg h-96.2 w-full object-cover">
     <p class="text-gray-700 mt-4 ">Ingredients: {{recipe['ingredients']}}</p>
-    <p class="text-gray-700">Steps: {{recipe['steps']}}</p>
+    <br />
+    <p class="text-gray-700">Steps: 
+      {% for step in steps %}
+        <br/> 
+        {{ step }}
+      {% endfor %}
+    
+    </p>
   </section>
 
   <section class="reviews bg-white shadow-md rounded px-8 pt-6 pb-8 mb-8">

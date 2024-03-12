@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField, FileField
+from wtforms import StringField, SubmitField, PasswordField, SelectField, SelectMultipleField, widgets, IntegerField, FileField, TextAreaField
 from wtforms.validators import InputRequired, EqualTo, Regexp, NumberRange
 from wtforms.widgets import CheckboxInput, ListWidget
 class RegistrationForm(FlaskForm):
@@ -23,10 +23,10 @@ class LoginForm(FlaskForm):
     
 class UploadForm(FlaskForm):
     title = StringField('Title:', validators=[InputRequired()])
-    ingredients = StringField('Ingredients:', validators=[InputRequired()])
-    steps = StringField('Steps:', validators=[InputRequired()], render_kw={"rows": 5})
+    ingredients = TextAreaField('Ingredients:', validators=[InputRequired()])
+    steps = TextAreaField('Steps:', validators=[InputRequired()], render_kw={"rows": 5})
     type = SelectField('Type(breakfast, lunch, dinner, snack):', choices=['Breakfast', 'Lunch', 'Dinner', 'Snack'], default='Breakfast')
-    allergies = StringField('Allergies:')
+    allergies = TextAreaField('Allergies:')
     file = FileField(validators=[InputRequired()])
     submit = SubmitField('Publish Recipe')
     edit = SubmitField('Edit')
