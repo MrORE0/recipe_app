@@ -29,12 +29,13 @@ class UploadForm(FlaskForm):
     allergies = StringField('Allergies:')
     file = FileField(validators=[InputRequired()])
     submit = SubmitField('Publish Recipe')
-    edit = SubmitField('Edit Recipe')
+    edit = SubmitField('Edit')
     delete = SubmitField('Delete')
 class ReviewForm(FlaskForm):
     feedback = StringField('Feedback:', validators=[InputRequired()])
     score = IntegerField('Score', validators=[InputRequired(), NumberRange(1,5)])
     submit = SubmitField('Submit')
+    delete = SubmitField('Delete')
 
 class Filters(FlaskForm):
     #here, first goes the value and then the label 

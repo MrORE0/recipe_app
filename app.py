@@ -167,6 +167,16 @@ def delete(id):
     flash('You successfully deleted this recipe.')
     return redirect(url_for('home'))
 
+@app.route('/delete_review/<int:review_id>', methods=['GET', 'POST'])
+@login_required
+def delete_review(review_id):
+    db = get_db()
+    recipe = db.execute("""SELECT recipe_id FROM reviews WHERE id = ?;""", (review_id,)).fetchone()
+    db.execute("""DELETE FROM reviews WHERE id = ?;""",(review_id,))
+    db.commit()
+    flash('You successfully deleted this review.')
+    return redirect(url_for('open_recipe', id = recipe['recipe_id']))
+
 @app.route('/favourite/<int:id>', methods=['GET', 'POST'])
 @login_required
 def favourite(id):
@@ -282,7 +292,6 @@ def home():
     recipes = recipes[start:end]  # Slice recipes for current page
 
     return loading_recipes(form, recipes, filters, page, total_pages)
-
 
 
 def search_for(prompt, recipes):
