@@ -184,11 +184,11 @@ def favourite(id):
     return redirect(url_for('open_recipe', id = id))
 
 # here we load the recipes for home and favourites
-def loading_recipes(form, recipes, filters):
+def loading_recipes(form, recipes, filters,  page, total_pages):
         if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters)    
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters, page = page, total_pages = total_pages)    
         else:
-            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters)
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters, page = page, total_pages = total_pages)
 
 @app.route('/open_favourites/<username>', methods=['GET', 'POST'])
 @login_required
@@ -243,24 +243,47 @@ def checkFilters(recipes, filters):
     filtered_recipes = [recipe for recipe in recipes if recipe['type'] in filters]
     return filtered_recipes
 
-@app.route('/', methods = ['GET', 'POST'])
-@app.route('/home', methods = ['GET', 'POST'])
+
+@app.route('/', methods=['GET', 'POST'])
+@app.route('/home', methods=['GET', 'POST'])
 def home():
+    PER_PAGE = 9
     form = Filters()
     db = get_db()
     filters = form.type_checkboxes.data
     prompt = form.search.data
+
     recipes = db.execute("""SELECT * FROM recipes;""").fetchall()
+
+    # Get the current page number from the URL query parameter
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE
+
     if prompt and filters:
-        # we need the intersection of both after filtering the passed recipes
         searched_for = search_for(prompt, recipes)
-        filtered = checkFilters(recipes, filters)
+        filtered = checkFilters(searched_for, filters)
         recipes = list(set(searched_for) & set(filtered))
+        total_recipes = len(recipes)
     elif prompt:
-        recipes =  search_for(prompt = prompt, recipes=recipes)
+        recipes = search_for(prompt, recipes) 
+        recipes = search_for(prompt=prompt, recipes=recipes)
+        total_recipes = len(recipes)
     elif filters:
+        filtered = checkFilters(recipes, filters)
         recipes = checkFilters(recipes, filters)
-    return loading_recipes(form, recipes, filters)
+        total_recipes = len(recipes)
+    else:
+        total_recipes = len(recipes)
+
+    # Calculate total pages for pagination
+    total_pages = (total_recipes + PER_PAGE - 1) // PER_PAGE
+
+    recipes = recipes[start:end]  # Slice recipes for current page
+
+    return loading_recipes(form, recipes, filters, page, total_pages)
+
+
 
 def search_for(prompt, recipes):
     db = get_db()

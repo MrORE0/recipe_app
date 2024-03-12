@@ -2,7 +2,7 @@
 
 {% block main_content %}
 <div class="flex flex-col md:flex-row min-h-screen">
-    <aside class="bg-gray-100 w-full md:w-1/5 p-4 md:mr-4">
+    <aside class="bg-gray-100 w-full md:w-1/6 p-4 md:mr-4">
         <form action="" method="post" novalidate>
             {{ form.search.label }}
             {{ form.search(class="mb-4 block w-full px-4 py-2 rounded border border-gray-300 focus:outline-none focus:border-blue-500") }}
@@ -25,7 +25,7 @@
         </form>
     </aside>
 
-    <main class="flex-grow p-4 md:pl-0 mb-28">
+    <main class="flex-grow p-4 md:pl-0 mb-28 md:w-5/6">
         <section class="all_recipes">
             {% if recipes %}
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -34,9 +34,34 @@
                     <img src="{{ url_for('static', filename=recipe['image_path']) }}" alt="{{ recipe['title'] }}" class="w-full h-48 object-cover group-hover:scale-110">
                     <div class="p-4">
                         <h2 class="text-xl font-bold tracking-wide">{{ recipe['title'] }}</h2>
+                        <p class="tracking-wide"> Published by: {{ recipe['username'] }}</p>
                     </div>
                 </a>
                 {% endfor %}
+            </div>
+
+            <!--Paging-->
+            <div class="flex justify-center mt-4">
+                {% if total_pages > 1 %}
+                <nav class="pagination">
+                    {% if page > 1 %}
+                    <a href="{{ url_for('home', page=page-1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Prev &lsaquo;</a>
+                    {% endif %}
+
+                    {% for p in range(1, total_pages + 1) %}
+                        {% if p == page %}
+                            <span class="pagination-link current">{{ p }}</span>
+                        {% else %}
+                            <a href="{{ url_for('home', page=p) }}" class="pagination-link">{{ p }}</a>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page < total_pages %}
+                    <a href="{{ url_for('home', page=page+1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Next &rsaquo;</a>
+                    {% endif %}
+
+                </nav>
+                {% endif %}
             </div>
             {% else %}
             <p class="text-center">No recipes were found.</p>
