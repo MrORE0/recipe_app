@@ -45,19 +45,19 @@
                 {% if total_pages > 1 %}
                 <nav class="pagination">
                     {% if page > 1 %}
-                    <a href="{{ url_for('home', page=page-1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Prev &lsaquo;</a>
+                    <a href="{{ url_for(route, username = g.user, page=page-1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Prev &lsaquo;</a>
                     {% endif %}
 
                     {% for p in range(1, total_pages + 1) %}
                         {% if p == page %}
                             <span class="pagination-link current">{{ p }}</span>
                         {% else %}
-                            <a href="{{ url_for('home', page=p) }}" class="pagination-link">{{ p }}</a>
+                            <a href="{{ url_for(route, username = g.user, page=p) }}" class="pagination-link">{{ p }}</a>
                         {% endif %}
                     {% endfor %}
 
                     {% if page < total_pages %}
-                    <a href="{{ url_for('home', page=page+1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Next &rsaquo;</a>
+                    <a href="{{ url_for(route, username = g.user, page=page+1) }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Next &rsaquo;</a>
                     {% endif %}
 
                 </nav>

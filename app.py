@@ -194,17 +194,23 @@ def favourite(id):
     return redirect(url_for('open_recipe', id = id))
 
 # here we load the recipes for home and favourites
-def loading_recipes(form, recipes, filters,  page, total_pages):
+def loading_recipes(form, recipes, filters,  page, total_pages, route):
         if g.user:
-            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters, page = page, total_pages = total_pages)    
+            return render_template('index.html', recipes = recipes, notGuest = True, form=form, message = filters, page = page, total_pages = total_pages, route = route)    
         else:
-            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters, page = page, total_pages = total_pages)
+            return render_template('index.html', recipes = recipes, notGuest = False, form=form, message = filters, page = page, total_pages = total_pages, route = route)
 
 @app.route('/open_favourites/<username>', methods=['GET', 'POST'])
 @login_required
 def open_favourites(username):
+    PER_PAGE = 9
     form = Filters()
     db = get_db()
+
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE
+
     prompt = form.search.data
     filters = form.type_checkboxes.data
     recipes = db.execute(
@@ -213,38 +219,58 @@ def open_favourites(username):
                 SELECT recipe_id FROM favourites
                 WHERE username = ?
             );""", (g.user,)).fetchall()
+    total_recipes = len(recipes)
     if prompt and filters:
          # we need the intersection of both after filtering the passed recipes
         searched_for = search_for(prompt, recipes)
         filtered = checkFilters(recipes, filters)
         recipes = list(set(searched_for) & set(filtered))
+        total_recipes = len(recipes)
     elif prompt:
         recipes = search_for(prompt, recipes)
+        total_recipes = len(recipes)
     elif filters:
         recipes = checkFilters(recipes, filters)
-    return loading_recipes(form, recipes, filters)
+        total_recipes = len(recipes)
+        
+    total_pages = (total_recipes + PER_PAGE - 1) // PER_PAGE
+    recipes = recipes[start:end]
+    return loading_recipes(form, recipes, filters, page, total_pages, route = 'open_favourites')
 
 
 @app.route('/open_my_recipes/<username>', methods=['GET', 'POST'])
 @login_required
 def open_my_recipes(username):
+    PER_PAGE = 9
     form = Filters()
     db = get_db()
+
+    page = request.args.get('page', 1, type=int)
+    start = (page - 1) * PER_PAGE
+    end = start + PER_PAGE
+
     prompt = form.search.data
     filters = form.type_checkboxes.data
     recipes = db.execute(
         """SELECT * FROM recipes
         WHERE username = ? ;""", (g.user,)).fetchall()
+    total_recipes = len(recipes)
     if prompt and filters:
          # we need the intersection of both after filtering the passed recipes
         searched_for = search_for(prompt, recipes)
         filtered = checkFilters(recipes, filters)
         recipes = list(set(searched_for) & set(filtered))
+        total_recipes = len(recipes)
     elif prompt:
         recipes = search_for(prompt, recipes)
+        total_recipes = len(recipes)
     elif filters:
         recipes = checkFilters(recipes, filters)
-    return loading_recipes(form, recipes, filters)
+        total_recipes = len(recipes)
+
+    total_pages = (total_recipes + PER_PAGE - 1) // PER_PAGE
+    recipes = recipes[start:end]
+    return loading_recipes(form, recipes, filters, page, total_pages, route = 'open_my_recipes')
     
 
 #here we check the filters and execute searches based on them
@@ -291,7 +317,7 @@ def home():
 
     recipes = recipes[start:end]  # Slice recipes for current page
 
-    return loading_recipes(form, recipes, filters, page, total_pages)
+    return loading_recipes(form, recipes, filters, page, total_pages, route = 'home')
 
 
 def search_for(prompt, recipes):
