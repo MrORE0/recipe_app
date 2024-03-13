@@ -123,12 +123,20 @@ def process_recipe_form(recipe):
                 (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data)
             )
         else:
-            db.execute(
-                """UPDATE recipes
-                SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
-                WHERE id = ?;""",
-                (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
-            )
+            if 'edit' in request.base_url:
+                db.execute(
+                    """UPDATE recipes
+                    SET username = ?, title = ?, ingredients = ?, steps = ?, allergies = ?, type = ?
+                    WHERE id = ?;""",
+                    (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, form.allergies.data, form.type.data, recipe['id'])
+                )
+            else:
+                db.execute(
+                    """UPDATE recipes
+                    SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
+                    WHERE id = ?;""",
+                    (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
+                )
         db.commit()
         return True
     return False
@@ -137,8 +145,9 @@ def process_recipe_form(recipe):
 @login_required
 def upload():
     form = UploadForm()
-    if process_recipe_form(None):
-        return redirect('/home')
+    if form.file.data:
+        if process_recipe_form(None):
+            return redirect('/home')
     notGuest = bool(g.user) #if g.user exists 
     return render_template('recipe_upload.html', form=form, notGuest = notGuest)
 
@@ -393,6 +402,8 @@ def open_recipe(id):
                  # Check if the current user has not left a review for this recipe
                 has_reviewed = any(review['username'] == g.user for review in reviews)
                 recipe = db.execute("SELECT * FROM recipes WHERE id = ?;", (id,)).fetchone()
+                steps_string = recipe['steps']
+                numbered_steps = re.findall(r'\d+\.\s*.*?(?=\d+\.\s*|\Z)', steps_string, re.DOTALL) # a regular expression to split the step while keeping the number
                 return render_template('open_recipe.html', recipe=recipe, publisher=False, form=form, notGuest=notGuest,filename = filename, review_form = review_form, reviews = reviews, has_reviewed = has_reviewed, user = g.user, avg_score = avg_score['score'], steps = numbered_steps)
         else:
             return "Recipe not found", 404

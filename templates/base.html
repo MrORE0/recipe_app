@@ -9,7 +9,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex flex-col"> <header class="bg-gray-800 text-white">
+<body class="min-h-screen flex flex-col" onload="hideFunction()">
+  <header class="bg-gray-800 text-white">
         {% block header_content %}
             <nav class="flex justify-between px-4 py-2">
                <a href="{{ url_for('home') }}"><h1 class="text-xl font-bold">Grumpy Cooks</h1></a>
