@@ -33,27 +33,31 @@
     <script>
       // https://www.w3schools.com/howto/howto_js_toggle_hide_show.asp 
       function hideFunction() {
-        url = window.location.href;
-        let x = document.getElementById("keepImage");
-        if (url.includes('upload')){
-          x.style.display = "none";
-        }
-        else{
-          x.style.display = "block";
-        }
-      }
+    let url = window.location.href;
+    let x = document.getElementById("keepImage");
+    let y = document.getElementById("fileField");
+    if (url.includes('upload')) {
+        x.style.display = "none";
+        y.style.display = "block";
+    } else {
+        x.style.display = "block";
+        y.style.display = "none";
+    }
+}
 
-      function hideFileField() {
-          let x = document.getElementById("fileField");
-          if (x.style.display === "none") {
-            x.style.display = "block";
-          } else {
-            x.style.display = "none";
-          }
-        }
+function hideFileField() {
+    let x = document.getElementById("fileField");
+    let y = document.getElementById("hide").checked;
+    if (y) {
+        x.style.display = "none";
+    } else {
+        x.style.display = "block";
+    }
+}
+
       
     </script>
-    <p id="keepImage">Keep old image: <input type="checkbox" id="hide" value="Keep old image" onclick="hideFileField()"></p>
+    <p id="keepImage">Keep old image: <input type="checkbox" id="hide" value="Keep old image" checked onclick="hideFileField()"></p>
 
     <div class="flex items-center mb-4 mt-5" id="fileField">
       <label for="file" class="text-sm font-bold text-gray-700 mr-2">Upload Image</label>

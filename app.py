@@ -1,3 +1,14 @@
+"""
+When uploading a picture is always required however whats not true for the edit there you can keep the already uploaded one
+Only the admin or the user who commented can delete a comment
+Users:
+username    password
+admin        admin321
+mert         123
+nikol        321
+"""
+
+
 from flask import Flask, render_template, redirect, make_response, request, url_for, g, session, flash
 from database import get_db, close_db 
 from forms import RegistrationForm, LoginForm, UploadForm, Filters, ReviewForm
@@ -124,18 +135,26 @@ def process_recipe_form(recipe):
             )
         else:
             if 'edit' in request.base_url:
-                db.execute(
+                if file:
+                    db.execute(
                     """UPDATE recipes
-                    SET username = ?, title = ?, ingredients = ?, steps = ?, allergies = ?, type = ?
+                    SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
                     WHERE id = ?;""",
-                    (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, form.allergies.data, form.type.data, recipe['id'])
+                    (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
                 )
+                else:
+                    db.execute(
+                        """UPDATE recipes
+                        SET username = ?, title = ?, ingredients = ?, steps = ?, allergies = ?, type = ?
+                        WHERE id = ?;""",
+                        (g.user, form.title.data, form.ingredients.data, form.steps.data, form.allergies.data, form.type.data, recipe['id'])
+                    )
             else:
                 db.execute(
                     """UPDATE recipes
                     SET username = ?, title = ?, ingredients = ?, steps = ?, image_path = ?, allergies = ?, type = ?
                     WHERE id = ?;""",
-                    (g.user, form.title.data, '\n'.join(form.ingredients.data), form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
+                    (g.user, form.title.data, form.ingredients.data, form.steps.data, image_path_db, form.allergies.data, form.type.data, recipe['id'])
                 )
         db.commit()
         return True
@@ -147,7 +166,7 @@ def upload():
     form = UploadForm()
     if form.file.data:
         if process_recipe_form(None):
-            return redirect('/home')
+            return redirect('home')
     notGuest = bool(g.user) #if g.user exists 
     return render_template('recipe_upload.html', form=form, notGuest = notGuest)
 
