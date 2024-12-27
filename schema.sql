@@ -1,25 +1,28 @@
+PRAGMA encoding = "UTF-8";
+PRAGMA foreign_keys = ON;
 
--- other query for the users table
 DROP TABLE IF EXISTS users;
-CREATE TABLE users
-(
-    username TEXT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL
 );
-
 DROP TABLE IF EXISTS recipes;
-CREATE TABLE recipes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+CREATE TABLE IF NOT EXISTS recipes (
+    id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     title TEXT NOT NULL,
     ingredients TEXT NOT NULL,
     steps TEXT NOT NULL,
     image_path TEXT,
-    allergies TEXT NOT NULL, 
+    allergies TEXT,
     type TEXT,
     FOREIGN KEY (username) REFERENCES users(id)
 );
--- type - breakfast, lunch, dinner, snack
+
+-- Insert default admin user if not exists
+INSERT OR IGNORE INTO users (id, username, password)
+VALUES ('admin_default_id', 'admin', 'scrypt:32768:8:1$verySecureHash');
 
 DROP TABLE IF EXISTS reviews;
 CREATE TABLE reviews(
